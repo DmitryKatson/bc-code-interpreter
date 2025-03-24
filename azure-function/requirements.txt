@@ -1,0 +1,7 @@
+azure-functions
+requests
+pandas
+numpy
+scikit-learn
+matplotlib
+statsmodels
