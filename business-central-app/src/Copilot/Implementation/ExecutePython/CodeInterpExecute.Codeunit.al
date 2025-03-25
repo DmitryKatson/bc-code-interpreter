@@ -14,7 +14,9 @@ codeunit 50105 "GPT Code Interp Execute"
         ResponseText: Text;
         IsSuccessful: Boolean;
         Setup: Record "GPT Code Interpreter Setup";
+        UIHelper: Codeunit "GPT Code Interp UI Helper";
     begin
+        UIHelper.ShowStatus('Executing code...');
         // Initialize authentication
         IAzureFunctionsAuthentication := AzureFunctionsAuthentication.CreateCodeAuth(Setup.GetAzureFunctionURL(), Setup.GetAzureFunctionKey());
 
@@ -32,6 +34,8 @@ codeunit 50105 "GPT Code Interp Execute"
 
         // Get response content
         AzureFunctionsResponse.GetResultAsText(ResponseText);
+
+        UIHelper.CloseStatus();
 
         // Return the response
         exit(ResponseText);
