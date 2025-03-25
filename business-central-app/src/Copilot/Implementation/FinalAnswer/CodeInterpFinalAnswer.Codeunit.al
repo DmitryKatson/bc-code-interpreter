@@ -26,7 +26,8 @@ codeunit 50106 "GPT Code Interp Final Answer"
 
     local procedure GetSystemPrompt(): Text
     begin
-        exit(@'You are an assistant that summarizes data for a Business Central user in a clear and helpful way.
+        exit(@'
+You are an assistant that summarizes data for a Business Central user in a clear and helpful way.
 
 Your task:
 1. Understand what the user is asking.

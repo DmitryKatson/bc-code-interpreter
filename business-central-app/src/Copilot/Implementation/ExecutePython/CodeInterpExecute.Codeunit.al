@@ -28,7 +28,7 @@ codeunit 50105 "GPT Code Interp Execute"
         // Check response
         IsSuccessful := AzureFunctionsResponse.IsSuccessful();
         if not IsSuccessful then
-            Error('Azure Function error: %1', AzureFunctionsResponse.GetError());
+            Error(GetErrorMessage(AzureFunctionsResponse));
 
         // Get response content
         AzureFunctionsResponse.GetResultAsText(ResponseText);
@@ -43,5 +43,10 @@ codeunit 50105 "GPT Code Interp Execute"
     begin
         RequestContent.Add('code', PythonCode);
         RequestContent.WriteTo(Body);
+    end;
+
+    local procedure GetErrorMessage(var AzureFunctionsResponse: Codeunit "Azure Functions Response") ErrorMessage: Text
+    begin
+        AzureFunctionsResponse.GetError(ErrorMessage);
     end;
 }

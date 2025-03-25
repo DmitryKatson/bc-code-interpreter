@@ -3,8 +3,30 @@ import logging
 import os
 import requests
 import json
+import re 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import json
+import base64
+import statsmodels.api as sm
+import sklearn
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+
+# Replace custom JSON encoder class with a simpler default function
+def json_serializable(obj):
+    """Helper function to make objects JSON serializable"""
+    if isinstance(obj, type):
+        return str(obj)
+    elif hasattr(obj, 'to_dict'):
+        return obj.to_dict()
+    elif hasattr(obj, 'tolist'):
+        return obj.tolist()
+    elif pd.isna(obj):
+        return None
+    # Add more types as needed
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 def get_access_token():
     tenant_id = os.environ["BC_TENANT_ID"]
@@ -41,7 +63,36 @@ def get_bc_data(relative_url, environment):
     response.raise_for_status()
     return response.json()
 
-@app.route(route="main")
+def get_safe_globals():
+    import builtins
+    
+    # List of built-in functions that should NOT be allowed
+    restricted_builtins = {
+        "open", "eval", "exec", "compile", "input", "globals", "locals",
+        "vars", "delattr", "setattr", "getattr", "__import__", "exit", "quit"
+    }
+    
+    # Build a safe version of __builtins__
+    safe_builtin_dict = {
+        k: getattr(builtins, k)
+        for k in dir(builtins)
+        if not k.startswith("__") and k not in restricted_builtins
+    }
+    
+    return {
+        "get_bc_data": get_bc_data,
+        "pd": pd,
+        "np": np,
+        "plt": plt,
+        "json": json,
+        "base64": base64,
+        "sm": sm,
+        "sklearn": sklearn,
+        "__builtins__": safe_builtin_dict
+    }
+    
+
+@app.route(route="execute", methods=["POST"])
 def main(req: func.HttpRequest) -> func.HttpResponse:
     import traceback
     logging.info("Python BC Function triggered")
@@ -50,60 +101,46 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         body = req.get_json()
         user_code = body.get("code")
 
-        # Basic security check
+        # Improved security check using regex word boundaries
         restricted_keywords = ["os", "sys", "subprocess", "open", "eval", "exec", "importlib"]
-        if any(kw in user_code for kw in restricted_keywords):
+        pattern = r'\b(' + '|'.join(restricted_keywords) + r')\b'
+        match = re.search(pattern, user_code)
+        if match:
+            # Return plain text error instead of JSON
             return func.HttpResponse(
-                "Error: Unsafe code detected (restricted keywords used).",
+                f"Unsafe code detected — usage of '{match.group()}' is not allowed.",
                 status_code=400,
                 mimetype="text/plain"
             )
 
         # Prepare safe execution environment
-        safe_globals = {
-            "get_bc_data": get_bc_data,
-            "__builtins__": {
-                "range": range,
-                "len": len,
-                "sum": sum,
-                "min": min,
-                "max": max,
-                "sorted": sorted,
-                "dict": dict,
-                "list": list,
-                "str": str,
-                "int": int,
-                "float": float,
-                "bool": bool,
-                "abs": abs,
-                "round": round,
-                "map": map,
-                "filter": filter
-            }
-        }
+        safe_globals = get_safe_globals()
 
         safe_locals = {}
         exec(user_code, safe_globals, safe_locals)
 
         result = safe_locals.get("output")
         if result is None:
+            # Return plain text error instead of JSON
             return func.HttpResponse(
-                "Error: No 'output' variable returned from the script.",
+                "No 'output' variable returned from the script.",
                 status_code=400,
                 mimetype="text/plain"
             )
 
         return func.HttpResponse(
-            json.dumps({ "result": result }),
+            json.dumps({ "result": result }, default=json_serializable),
             status_code=200,
             mimetype="application/json"
         )
 
     except Exception as e:
-        # Include traceback for easier debugging
         tb = traceback.format_exc()
+        error_message = f"Python Error: {str(e)}\n{tb}"
+        
+        # Return the error as plain text with a 400 status code
         return func.HttpResponse(
-            f"Error during execution:\n{str(e)}\n\n{tb}",
-            status_code=500,
+            error_message,
+            status_code=400,
             mimetype="text/plain"
         )

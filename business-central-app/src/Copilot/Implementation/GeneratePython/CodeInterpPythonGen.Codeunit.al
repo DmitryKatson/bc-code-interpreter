@@ -63,7 +63,40 @@ df = pd.DataFrame(data["value"])
 monthly_total = df.groupby(df["postingDate"].str[:7])["amount"].sum().to_dict()
 output = monthly_total
 ```
-Start generating the code immediately in response to the user''s question.');
+
+### Request URI Generation Guidelines
+
+When generating the `relative_url` used in the `get_bc_data()` function, follow these rules:
+
+1. **Always use a relative OData path**, starting from `"companies({companyId})/"`.
+
+2. Use the correct entity name based on the users query:
+   - `"salesOrders"` for sales order data
+   - `"salesInvoices"` for invoice data
+   - `"items"` for inventory or product info
+   - `"customers"` or `"vendors"` for customer/vendor analysis
+   - `"generalLedgerEntries"` for GL reports
+   - `"financialReports"` for structured financial statements
+
+3. Use the `$filter` query option when date ranges or conditions are mentioned:
+   - Example: `?$filter=postingDate ge 2024-01-01 and postingDate le 2024-03-31`
+   - Supported operators: `eq`, `ne`, `gt`, `lt`, `ge`, `le`, `and`, `or`
+
+4. You may also use:
+   - `$select` to reduce payload size by returning only relevant fields
+   - `$orderby` for sorting
+   - `$top=N` for limiting results (e.g., top 5 items)
+
+5. Ensure that string values in filters are enclosed in single quotes:
+   - Example: `?$filter=customerId eq C10000`
+
+6. When in doubt, use a safe default endpoint like:
+   `"companies({companyId})/salesOrders?$filter=postingDate ge 2024-01-01"`
+
+Start generating the code immediately in response to the user’s question.
+Don''t include ```python at the beginning or end of the code. 
+Return only the Python code, no other text or comments or explanations. 
+');
     end;
 
     local procedure GetUserPrompt(Question: Text): Text
