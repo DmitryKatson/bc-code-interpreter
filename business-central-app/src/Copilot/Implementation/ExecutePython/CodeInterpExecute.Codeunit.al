@@ -8,7 +8,13 @@ codeunit 50105 "GPT Code Interp Execute"
         AzureFunctionsAuthentication: Codeunit "Azure Functions Authentication";
         IAzureFunctionsAuthentication: Interface "Azure Functions Authentication";
 
-    procedure ExecuteCode(PythonCode: Text) Result: Text
+    [TryFunction]
+    procedure TryExecuteCode(PythonCode: Text; var Result: Text)
+    begin
+        Result := ExecuteCode(PythonCode);
+    end;
+
+    local procedure ExecuteCode(PythonCode: Text) Result: Text
     var
         RequestContent: JsonObject;
         ResponseText: Text;

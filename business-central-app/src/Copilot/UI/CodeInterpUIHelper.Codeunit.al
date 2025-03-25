@@ -2,20 +2,20 @@ codeunit 50103 "GPT Code Interp UI Helper"
 {
     Access = Public;
 
+    var
+        StatusDialog: Dialog;
+
     procedure ShowStatus(Status: Text)
     var
-        Dialog: Dialog;
     begin
         if GuiAllowed then
-            Dialog.Open(Status);
+            StatusDialog.Open(Status);
     end;
 
     procedure CloseStatus()
-    var
-        Dialog: Dialog;
     begin
         if GuiAllowed then
-            Dialog.Close();
+            StatusDialog.Close();
     end;
 
 }
