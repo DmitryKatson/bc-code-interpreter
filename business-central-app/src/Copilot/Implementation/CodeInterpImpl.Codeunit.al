@@ -47,7 +47,6 @@ codeunit 50102 "GPT Code Interp Impl"
         PythonGenerator: Codeunit "GPT Code Interp Python Gen";
         PythonExecutor: Codeunit "GPT Code Interp Execute";
         PythonErrorAnalyzer: Codeunit "GPT Code Interp Error Analyzer";
-        PythonErrorAnalysis: Text;
     begin
         MaxRetries := 3;
         RetryCount := 0;
@@ -61,9 +60,8 @@ codeunit 50102 "GPT Code Interp Impl"
             // Execute code in Azure Function
             if not PythonExecutor.TryExecuteCode(PythonCode, ExecutionResult) then begin
                 // Analyze error and generate corrected code
-                PythonGenerator.AddErrorText(GetLastErrorText());
-                PythonErrorAnalyzer.AnalyzeError(InputText, PythonCode, GetLastErrorText(), PythonErrorAnalysis, AzureOpenAI);
-                PythonGenerator.AddErrorAnalysis(PythonErrorAnalysis);
+                PythonGenerator.AddErrorText(RetryCount, GetLastErrorText());
+                PythonErrorAnalyzer.AnalyzeError(InputText, PythonCode, GetLastErrorText(), PythonGenerator, AzureOpenAI);
 
                 RetryCount += 1;
                 if RetryCount >= MaxRetries then

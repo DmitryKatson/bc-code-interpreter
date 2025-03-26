@@ -58,7 +58,7 @@ def get_bc_data(relative_url, environment):
         "Accept": "application/json"
     }
 
-    base_url = f"https://api.businesscentral.dynamics.com/v2.0/{tenant_id}/{environment}/api/v2.0"
+    base_url = f"https://api.businesscentral.dynamics.com/v2.0/{tenant_id}/{environment}/api"
     response = requests.get(f"{base_url}/{relative_url}", headers=headers)
     response.raise_for_status()
     return response.json()
@@ -118,8 +118,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         safe_locals = {}
         exec(user_code, safe_globals, safe_locals)
-
+        logging.info(f"Executed code: {user_code}")
+        
         result = safe_locals.get("output")
+        logging.info(f"Result: {result}")
+        
         if result is None:
             # Return plain text error instead of JSON
             return func.HttpResponse(
@@ -137,6 +140,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Python Error: {str(e)}\n{tb}"
+        
+        logging.error(error_message)
         
         # Return the error as plain text with a 400 status code
         return func.HttpResponse(
