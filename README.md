@@ -32,20 +32,16 @@ sequenceDiagram
     BC Extension->>LLM: Generate Python code (system prompt)
     LLM-->>BC Extension: Return Python code
     
-    Note over BC Extension,Azure Function: Retry Logic (up to 3 attempts)
     BC Extension->>Azure Function: Execute Python code via HTTP POST
     Azure Function->>BC API: Call Business Central API with token
     BC API-->>Azure Function: Return API data
     Azure Function-->>BC Extension: Return JSON result or error
     
     alt Execution Error
-        BC Extension->>LLM: Analyze error & generate diagnostic code
+        Note over BC Extension,Azure Function: Retry Logic (up to 3 attempts)
+        BC Extension->>LLM: Analyze error & generate improved code
         LLM-->>BC Extension: Return improved Python code
-        BC Extension->>Azure Function: Execute diagnostic/improved code
-        Azure Function->>BC API: Call Business Central API
-        BC API-->>Azure Function: Return API data
-        Azure Function-->>BC Extension: Return JSON result or error
-    end
+        BC Extension->>Azure Function: Retry execution with improved code
     end
     
     BC Extension->>LLM: Final summary prompt with result
