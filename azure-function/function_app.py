@@ -119,6 +119,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="text/plain"
             )
         
+        # Ensure data is always in text format to avoid serialization issues
+        if isinstance(output, dict) and "data" in output:
+            # Convert data to string format to avoid serialization errors
+            output["data"] = str(output["data"])
+        
+        # Now we can safely convert to JSON
         return func.HttpResponse(
             json.dumps(output),
             status_code=200,

@@ -7,9 +7,11 @@ codeunit 50102 "GPT Code Interp Impl"
         AOAIOperationResponse: Codeunit "AOAI Operation Response";
         AOAIChatCompletionParams: Codeunit "AOAI Chat Completion Params";
         CopilotSetup: Record "GPT Code Interpreter Setup";
+        UIHelper: Codeunit "GPT Code Interp UI Helper";
         ExecutionResult: Text;
         FinalAnswer: Text;
         ChartImages: Text;
+        ResultInHtml: Text;
     begin
         // TODO: Implement the following steps:
         // 1. Check if Copilot is enabled
@@ -36,8 +38,8 @@ codeunit 50102 "GPT Code Interp Impl"
         if FinalAnswer = '' then
             exit(ExecutionResult); // Fallback to showing raw result if summary fails
 
-        GetChartImages(ExecutionResult, ChartImages);
-        exit(FinalAnswer);
+        ResultInHtml := UIHelper.GenerateResultInHtml(FinalAnswer, GetChartImages(ExecutionResult));
+        exit(ResultInHtml);
     end;
 
     local procedure GenerateAndExecuteCode(InputText: Text; var AzureOpenAI: Codeunit "Azure OpenAi"): Text
@@ -86,13 +88,11 @@ codeunit 50102 "GPT Code Interp Impl"
         exit(FinalAnswerGenerator.GenerateSummary(Question, DataResult, AzureOpenAI));
     end;
 
-    local procedure GetChartImages(ExecutionResult: Text; var ChartImages: Text)
+    local procedure GetChartImages(ExecutionResult: Text) ChartImages: Text
     var
         Json: Codeunit Json;
-        DataResult: Text;
     begin
         Json.InitializeObject(ExecutionResult);
         Json.GetStringPropertyValueByName('chart_images', ChartImages);
     end;
-
 }

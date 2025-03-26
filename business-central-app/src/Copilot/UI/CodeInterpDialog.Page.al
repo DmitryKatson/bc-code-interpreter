@@ -18,18 +18,19 @@ page 50101 "GPT Code Interp Dialog"
 
                 trigger OnValidate()
                 begin
-                    ResponseText := '';
+                    ResponseTextInHtml := '';
                 end;
             }
         }
         area(Content)
         {
-            field(ResponseText; ResponseText)
+            field(ResponseTextInHtml; ResponseTextInHtml)
             {
                 ShowCaption = false;
                 MultiLine = true;
                 ApplicationArea = All;
                 Editable = false;
+                ExtendedDatatype = RichContent;
             }
         }
     }
@@ -53,12 +54,12 @@ page 50101 "GPT Code Interp Dialog"
 
     var
         InputText: Text;
-        ResponseText: Text;
+        ResponseTextInHtml: Text;
 
     local procedure GenerateResponse()
     var
         CodeInterpreterImpl: Codeunit "GPT Code Interp Impl";
     begin
-        ResponseText := CodeInterpreterImpl.GenerateAndExecuteCode(InputText);
+        ResponseTextInHtml := CodeInterpreterImpl.GenerateAndExecuteCode(InputText);
     end;
 }

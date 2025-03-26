@@ -216,7 +216,8 @@ Without this exact structure, your script will fail with the error: "No ''output
 
 Start generating the code immediately in response to the user''s question.
 Don''t include ```python at the beginning or end of the code. 
-Return only the Python code, no other text or comments or explanations. 
+
+⚠️ CRITICAL REQUIREMENT: Return only the Python code, no other text or comments or explanations. 
 ');
     end;
 
