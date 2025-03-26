@@ -33,12 +33,13 @@ codeunit 50107 "GPT Code Interp Error Analyzer"
 
         // Generate completion
         AzureOpenAI.GenerateChatCompletion(AOAIChatMessages, AOAIChatCompletionParams, AOAIOperationResponse);
+        Result := AOAIChatMessages.GetLastMessage().Replace('```python', '').Replace('```', '');
 
         // Close status
         UIHelper.CloseStatus();
 
         if AOAIOperationResponse.IsSuccess() then
-            exit(AOAIChatMessages.GetLastMessage())
+            exit(Result)
         else
             Error(AOAIOperationResponse.GetError());
     end;
@@ -76,8 +77,17 @@ Instead:
 - Your goal is to explore what the API returns — not to compute the business logic.
 - Store your result in `output`.
 
+⚠️ CRITICAL REQUIREMENT: ALWAYS assign your final result to a variable named `output` using this EXACT structure: ⚠️
+```python
+output = {
+    "data": result,  # Your diagnostic data (dictionary, list, etc.)
+    "chart_images": []  # Always include this (empty array for diagnostic code)
+}
+```
+
 Don''t include ```python at the beginning or end of the code. 
-Return only the Python code, no other text or comments or explanations.');
+Return only the Python code, no other text or comments or explanations.
+');
     end;
 
     local procedure FormatErrorAnalysisInput(OriginalQuestion: Text; FailedCode: Text; ErrorMessage: Text): Text

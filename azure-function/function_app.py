@@ -11,6 +11,7 @@ import json
 import base64
 import statsmodels.api as sm
 import sklearn
+import io
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
@@ -70,6 +71,7 @@ def get_safe_globals():
         "pd": pd,
         "np": np,
         "plt": plt,
+        "io": io,
         "json": json,
         "base64": base64,
         "sm": sm,
@@ -106,10 +108,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         exec(user_code, safe_globals, safe_locals)
         logging.info(f"Executed code: {user_code}")
         
-        result = safe_locals.get("output")
-        logging.info(f"Result: {result}")
+        output = safe_locals.get("output")
+        logging.info(output)
         
-        if result is None:
+        if output is None:
             # Return plain text error instead of JSON
             return func.HttpResponse(
                 "No 'output' variable returned from the script.",
@@ -118,7 +120,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         
         return func.HttpResponse(
-            json.dumps({ "result": str(result) }),
+            json.dumps(output),
             status_code=200,
             mimetype="application/json"
         )

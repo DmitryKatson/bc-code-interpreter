@@ -9,6 +9,7 @@ codeunit 50102 "GPT Code Interp Impl"
         CopilotSetup: Record "GPT Code Interpreter Setup";
         ExecutionResult: Text;
         FinalAnswer: Text;
+        ChartImages: Text;
     begin
         // TODO: Implement the following steps:
         // 1. Check if Copilot is enabled
@@ -35,6 +36,7 @@ codeunit 50102 "GPT Code Interp Impl"
         if FinalAnswer = '' then
             exit(ExecutionResult); // Fallback to showing raw result if summary fails
 
+        GetChartImages(ExecutionResult, ChartImages);
         exit(FinalAnswer);
     end;
 
@@ -64,11 +66,11 @@ codeunit 50102 "GPT Code Interp Impl"
                 PythonErrorAnalyzer.AnalyzeError(InputText, PythonCode, GetLastErrorText(), PythonGenerator, AzureOpenAI);
 
                 RetryCount += 1;
-                if RetryCount >= MaxRetries then
+                if RetryCount > MaxRetries then
                     Error('Failed to execute the code in Azure Function.');
             end else
                 exit(ExecutionResult);
-        until RetryCount >= MaxRetries;
+        until RetryCount > MaxRetries;
 
         exit(ExecutionResult);
     end;
@@ -76,7 +78,21 @@ codeunit 50102 "GPT Code Interp Impl"
     local procedure GenerateSummary(Question: Text; ExecutionResult: Text; var AzureOpenAI: Codeunit "Azure OpenAi"): Text
     var
         FinalAnswerGenerator: Codeunit "GPT Code Interp Final Answer";
+        Json: Codeunit Json;
+        DataResult: Text;
     begin
-        exit(FinalAnswerGenerator.GenerateSummary(Question, ExecutionResult, AzureOpenAI));
+        Json.InitializeObject(ExecutionResult);
+        Json.GetStringPropertyValueByName('data', DataResult);
+        exit(FinalAnswerGenerator.GenerateSummary(Question, DataResult, AzureOpenAI));
     end;
+
+    local procedure GetChartImages(ExecutionResult: Text; var ChartImages: Text)
+    var
+        Json: Codeunit Json;
+        DataResult: Text;
+    begin
+        Json.InitializeObject(ExecutionResult);
+        Json.GetStringPropertyValueByName('chart_images', ChartImages);
+    end;
+
 }
