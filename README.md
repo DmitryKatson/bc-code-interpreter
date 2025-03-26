@@ -32,7 +32,6 @@ sequenceDiagram
     BC Extension->>LLM: Generate Python code (system prompt)
     LLM-->>BC Extension: Return Python code
     
-    rect rgb(240, 248, 255)
     Note over BC Extension,Azure Function: Retry Logic (up to 3 attempts)
     BC Extension->>Azure Function: Execute Python code via HTTP POST
     Azure Function->>BC API: Call Business Central API with token
