@@ -14,20 +14,6 @@ import sklearn
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
-# Replace custom JSON encoder class with a simpler default function
-def json_serializable(obj):
-    """Helper function to make objects JSON serializable"""
-    if isinstance(obj, type):
-        return str(obj)
-    elif hasattr(obj, 'to_dict'):
-        return obj.to_dict()
-    elif hasattr(obj, 'tolist'):
-        return obj.tolist()
-    elif pd.isna(obj):
-        return None
-    # Add more types as needed
-    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-
 def get_access_token():
     tenant_id = os.environ["BC_TENANT_ID"]
     client_id = os.environ["BC_CLIENT_ID"]
@@ -130,9 +116,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400,
                 mimetype="text/plain"
             )
-
+        
         return func.HttpResponse(
-            json.dumps({ "result": result }, default=json_serializable),
+            json.dumps({ "result": str(result) }),
             status_code=200,
             mimetype="application/json"
         )

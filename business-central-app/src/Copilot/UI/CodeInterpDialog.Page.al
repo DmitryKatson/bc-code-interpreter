@@ -4,7 +4,7 @@ page 50101 "GPT Code Interp Dialog"
     PageType = PromptDialog;
     IsPreview = true;
     Extensible = false;
-
+    DataCaptionExpression = InputText;
     layout
     {
         area(Prompt)
@@ -14,6 +14,7 @@ page 50101 "GPT Code Interp Dialog"
                 ShowCaption = false;
                 MultiLine = true;
                 ApplicationArea = All;
+                InstructionalText = 'Enter your question here';
 
                 trigger OnValidate()
                 begin

@@ -10,7 +10,7 @@ codeunit 50107 "GPT Code Interp Error Analyzer"
     begin
         PythonCode := GenerateErrorAnalysisCode(OriginalQuestion, FailedCode, ErrorMessage, AzureOpenAI);
         if not PythonExecutor.TryExecuteCode(PythonCode, Result) then
-            Error('Failed to execute the error analysis code.');
+            Error('Failed to execute the error analysis code. Error: ' + GetLastErrorText());
 
         PythonGenerator.AddErrorAnalysis(PythonCode, Result);
     end;

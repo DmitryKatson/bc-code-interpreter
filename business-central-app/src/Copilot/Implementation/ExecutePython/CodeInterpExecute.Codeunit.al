@@ -11,6 +11,7 @@ codeunit 50105 "GPT Code Interp Execute"
     [TryFunction]
     procedure TryExecuteCode(PythonCode: Text; var Result: Text)
     begin
+        ClearLastError();
         Result := ExecuteCode(PythonCode);
     end;
 
