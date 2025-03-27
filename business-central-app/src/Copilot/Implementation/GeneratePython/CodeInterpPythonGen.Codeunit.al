@@ -9,10 +9,7 @@ codeunit 50104 "GPT Code Interp Python Gen"
     var
         AOAIOperationResponse: Codeunit "AOAI Operation Response";
         AOAIChatCompletionParams: Codeunit "AOAI Chat Completion Params";
-        UIHelper: Codeunit "GPT Code Interp UI Helper";
     begin
-        UIHelper.ShowStatus('Generating code...');
-
         // Set lower temperature for more deterministic code generation
         AOAIChatCompletionParams.SetTemperature(1);
 
@@ -25,9 +22,6 @@ codeunit 50104 "GPT Code Interp Python Gen"
         // Generate completion
         AzureOpenAI.GenerateChatCompletion(AOAIChatMessages, AOAIChatCompletionParams, AOAIOperationResponse);
         Result := AOAIChatMessages.GetLastMessage().Replace('```python', '').Replace('```', '');
-
-        // Close status
-        UIHelper.CloseStatus();
 
         if AOAIOperationResponse.IsSuccess() then
             exit(Result)
@@ -52,11 +46,7 @@ codeunit 50104 "GPT Code Interp Python Gen"
     var
         ErrorAnalysisPrompt: TextBuilder;
     begin
-        ErrorAnalysisPrompt.AppendLine('You generated the following code to investigate the issue:');
-        ErrorAnalysisPrompt.AppendLine('<error_analysis_code>');
-        ErrorAnalysisPrompt.AppendLine(AnalysisCode);
-        ErrorAnalysisPrompt.AppendLine('</error_analysis_code>');
-        ErrorAnalysisPrompt.AppendLine('You executed the code and got the following result:');
+        ErrorAnalysisPrompt.AppendLine('You investigated the issue and figure out what went wrong and how to fix it.');
         ErrorAnalysisPrompt.AppendLine('<error_analysis>');
         ErrorAnalysisPrompt.AppendLine(ErrorAnalysis);
         ErrorAnalysisPrompt.AppendLine('</error_analysis>');

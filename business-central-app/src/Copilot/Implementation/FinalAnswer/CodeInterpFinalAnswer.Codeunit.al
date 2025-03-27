@@ -7,10 +7,7 @@ codeunit 50106 "GPT Code Interp Final Answer"
         AOAIOperationResponse: Codeunit "AOAI Operation Response";
         AOAIChatCompletionParams: Codeunit "AOAI Chat Completion Params";
         AOAIChatMessages: Codeunit "AOAI Chat Messages";
-        UIHelper: Codeunit "GPT Code Interp UI Helper";
     begin
-        UIHelper.ShowStatus('Generating final answer...');
-
         // Set slightly higher temperature for more natural language responses
         AOAIChatCompletionParams.SetTemperature(0.7);
 
@@ -20,8 +17,6 @@ codeunit 50106 "GPT Code Interp Final Answer"
 
         // Generate completion
         AzureOpenAI.GenerateChatCompletion(AOAIChatMessages, AOAIChatCompletionParams, AOAIOperationResponse);
-
-        UIHelper.CloseStatus();
 
         if AOAIOperationResponse.IsSuccess() then
             exit(AOAIChatMessages.GetLastMessage())

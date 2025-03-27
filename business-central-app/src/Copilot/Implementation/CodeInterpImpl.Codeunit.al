@@ -1,5 +1,8 @@
 codeunit 50102 "GPT Code Interp Impl"
 {
+    var
+        UIHelper: Codeunit "GPT Code Interp UI Helper";
+        FinalPythonCode: Text;
 
     procedure GenerateAndExecuteCode(InputText: Text) Result: Text
     var
@@ -7,7 +10,6 @@ codeunit 50102 "GPT Code Interp Impl"
         AOAIOperationResponse: Codeunit "AOAI Operation Response";
         AOAIChatCompletionParams: Codeunit "AOAI Chat Completion Params";
         CopilotSetup: Record "GPT Code Interpreter Setup";
-        UIHelper: Codeunit "GPT Code Interp UI Helper";
         ExecutionResult: Text;
         FinalAnswer: Text;
         ChartImages: Text;
@@ -34,7 +36,9 @@ codeunit 50102 "GPT Code Interp Impl"
             exit('Failed to generate and execute code.');
 
         // 4. Generate human-friendly final answer
+        UIHelper.ShowStatus('I found everything I needed. Generating final answer...');
         FinalAnswer := GenerateSummary(InputText, ExecutionResult, AzureOpenAI);
+        UIHelper.CloseStatus();
         if FinalAnswer = '' then
             exit(ExecutionResult); // Fallback to showing raw result if summary fails
 
@@ -51,30 +55,52 @@ codeunit 50102 "GPT Code Interp Impl"
         PythonGenerator: Codeunit "GPT Code Interp Python Gen";
         PythonExecutor: Codeunit "GPT Code Interp Execute";
         PythonErrorAnalyzer: Codeunit "GPT Code Interp Error Analyzer";
+        UIHelper: Codeunit "GPT Code Interp UI Helper";
     begin
         MaxRetries := 3;
         RetryCount := 0;
+        Clear(FinalPythonCode);
 
         repeat
             // Generate Python code using LLM
+            UIHelper.ShowStatus(StrSubstNo('Generating %1 to answer your question...', GetCodeCharacteristics(RetryCount)));
             PythonCode := PythonGenerator.GenerateCode(InputText, AzureOpenAI);
+            SetFinalPythonCode(PythonCode);
+
             if PythonCode = '' then
                 Error('Failed to generate Python code for your question.');
 
             // Execute code in Azure Function
+            UIHelper.ShowStatus('Executing code...');
             if not PythonExecutor.TryExecuteCode(PythonCode, ExecutionResult) then begin
-                // Analyze error and generate corrected code
-                PythonGenerator.AddErrorText(RetryCount, GetLastErrorText());
-                PythonErrorAnalyzer.AnalyzeError(InputText, PythonCode, GetLastErrorText(), PythonGenerator, AzureOpenAI);
-
                 RetryCount += 1;
                 if RetryCount > MaxRetries then
-                    Error('Failed to execute the code in Azure Function.');
+                    continue;
+
+                UIHelper.ShowStatus('Oops! I made a mistake. Let me find a better solution... (Attempt ' + Format(RetryCount) + '/' + Format(MaxRetries) + ')');
+                // Analyze error and find a way to fix it
+                PythonGenerator.AddErrorText(RetryCount, GetLastErrorText());
+                PythonErrorAnalyzer.AnalyzeError(InputText, PythonCode, GetLastErrorText(), PythonGenerator, AzureOpenAI);
             end else
                 exit(ExecutionResult);
+
         until RetryCount > MaxRetries;
 
-        exit(ExecutionResult);
+        Error('I tried to generate the code but failed. Please try to rephrase your question and try again.');
+    end;
+
+    local procedure GetCodeCharacteristics(RetryCount: Integer): Text
+    begin
+        case RetryCount of
+            0:
+                exit('code');
+            1:
+                exit('better code');
+            2:
+                exit('even better code');
+            else
+                exit('code');
+        end;
     end;
 
     local procedure GenerateSummary(Question: Text; ExecutionResult: Text; var AzureOpenAI: Codeunit "Azure OpenAi"): Text
@@ -94,5 +120,15 @@ codeunit 50102 "GPT Code Interp Impl"
     begin
         Json.InitializeObject(ExecutionResult);
         Json.GetStringPropertyValueByName('chart_images', ChartImages);
+    end;
+
+    local procedure SetFinalPythonCode(PythonCode: Text)
+    begin
+        FinalPythonCode := PythonCode;
+    end;
+
+    procedure GetThinkingProcess(): Text
+    begin
+        exit(UIHelper.GetThinkingProcessInHtml(FinalPythonCode));
     end;
 }

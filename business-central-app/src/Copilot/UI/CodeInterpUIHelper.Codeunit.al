@@ -4,18 +4,31 @@ codeunit 50103 "GPT Code Interp UI Helper"
 
     var
         StatusDialog: Dialog;
+        IsOpen: Boolean;
 
     procedure ShowStatus(Status: Text)
     var
     begin
-        if GuiAllowed then
+        if IsStatusOpen() then
+            CloseStatus();
+
+        if GuiAllowed then begin
             StatusDialog.Open(Status);
+            IsOpen := true;
+        end;
     end;
 
     procedure CloseStatus()
     begin
-        if GuiAllowed then
+        if GuiAllowed then begin
             StatusDialog.Close();
+            IsOpen := false;
+        end;
+    end;
+
+    procedure IsStatusOpen(): Boolean
+    begin
+        exit(IsOpen);
     end;
 
     procedure GenerateResultInHtml(FinalAnswer: Text; ChartImages: Text): Text
@@ -51,6 +64,19 @@ codeunit 50103 "GPT Code Interp UI Helper"
         end;
 
         // Close the HTML
+        StringBuilder.Append('</body></html>');
+
+        exit(StringBuilder.ToText());
+    end;
+
+    procedure GetThinkingProcessInHtml(FinalPythonCode: Text): Text
+    var
+        StringBuilder: TextBuilder;
+    begin
+        StringBuilder.Append('<html><body>');
+        StringBuilder.Append('<pre>');
+        StringBuilder.Append(FinalPythonCode);
+        StringBuilder.Append('</pre>');
         StringBuilder.Append('</body></html>');
 
         exit(StringBuilder.ToText());

@@ -20,10 +20,7 @@ codeunit 50107 "GPT Code Interp Error Analyzer"
         AOAIOperationResponse: Codeunit "AOAI Operation Response";
         AOAIChatCompletionParams: Codeunit "AOAI Chat Completion Params";
         AOAIChatMessages: Codeunit "AOAI Chat Messages";
-        UIHelper: Codeunit "GPT Code Interp UI Helper";
     begin
-        UIHelper.ShowStatus('Analyzing error...');
-
         // Set lower temperature for more deterministic code generation
         AOAIChatCompletionParams.SetTemperature(0);
 
@@ -34,9 +31,6 @@ codeunit 50107 "GPT Code Interp Error Analyzer"
         // Generate completion
         AzureOpenAI.GenerateChatCompletion(AOAIChatMessages, AOAIChatCompletionParams, AOAIOperationResponse);
         Result := AOAIChatMessages.GetLastMessage().Replace('```python', '').Replace('```', '');
-
-        // Close status
-        UIHelper.CloseStatus();
 
         if AOAIOperationResponse.IsSuccess() then
             exit(Result)
@@ -59,6 +53,11 @@ Your task is:
 - Generate new Python code that will help you understand the structure of the Business Central API response.
 - This may include inspecting field names, printing the first row, or listing available keys or types.
 
+⚠️ IMPORTANT PERFORMANCE GUIDELINE: When exploring data, NEVER request full datasets! ⚠️
+- Always limit your requests to just 1 row or metadata/keys
+- Use $top=1 in queries or only process the first item from results
+- Avoid operations that would process or return large datasets
+
 ⚠️ Do NOT regenerate the original analysis code yet.
 
 Instead:
@@ -70,11 +69,13 @@ Instead:
      - Example: `data = get_bc_data("v2.0", "sandbox")`
 
   B) For field-level errors (missing fields, wrong data types):
-     - Use `get_bc_data(relative_url, environment)` to re-fetch the data WITHOUT filters
-     - Inspect the structure by examining keys and first record
-     - Example: `data = get_bc_data("v2.0/companies({companyId})/salesOrders", "sandbox")`
+     - Use `get_bc_data(relative_url, environment)` to re-fetch the data WITH A LIMIT
+     - Add `?$top=1` to the URL to get just one record
+     - Inspect the structure by examining keys and first record only
+     - Example: `data = get_bc_data("v2.0/companies({companyId})/salesOrders?$top=1", "sandbox")`
 
-- Your goal is to explore what the API returns — not to compute the business logic.
+- Your goal is to explore the API structure — not the full dataset.
+- Minimize data transfer by only requesting exactly what you need to diagnose the issue.
 - Store your result in `output`.
 
 ⚠️ CRITICAL REQUIREMENT: ALWAYS assign your final result to a variable named `output` using this EXACT structure: ⚠️
