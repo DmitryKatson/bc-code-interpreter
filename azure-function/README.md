@@ -4,19 +4,31 @@ A secure Python execution environment for the Business Central Code Interpreter 
 
 ## Setup
 
-1. **Create Azure Function App**
-   - Runtime: Python 3.10+
-   - OS: Linux (recommended)
-   - Plan type: Consumption or Premium
+1. **Deploy with Visual Studio Code**
+   - Install [VS Code](https://code.visualstudio.com/) and the [Azure Functions extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
+   - Clone this repository and open in VS Code
+   - Use Azure Functions extension to deploy directly to Azure:
+     - Click the Azure icon in the sidebar
+     - Select "Deploy to Function App..." 
+     - Choose "Create new Function App in Azure..."
+     - Select Python runtime (3.10+)
+     - Set HTTP trigger with "Function" authentication level
+     - Choose a name, region, and plan (Consumption or Premium)
 
-2. **Register App in Azure AD**
+2. **Business Central API Access**
+   - *Skip this step if you already have BC API access configured*
+   - Register app in Azure AD
    - Add Business Central API permissions (API.ReadWrite.All)
    - Create a client secret
 
 3. **Configure Environment Variables**
-   - `BC_TENANT_ID`: Your Azure AD tenant ID
-   - `BC_CLIENT_ID`: Client ID of the app registration
-   - `BC_CLIENT_SECRET`: Secret of the app registration
+   - In the Azure Portal, navigate to your Function App
+   - Go to "Settings" > "Configuration" 
+   - Add the following Application settings:
+     - `BC_TENANT_ID`: Your Azure AD tenant ID
+     - `BC_CLIENT_ID`: Client ID of the app registration
+     - `BC_CLIENT_SECRET`: Secret of the app registration
+   - Click "Save" when finished
 
 ## Usage
 
