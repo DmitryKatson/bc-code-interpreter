@@ -15,7 +15,7 @@ The system works by:
 
 Watch the showcase video to see the Business Central Code Interpreter in action:
 
-<div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/1070190336?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="Full Process - No Retry - 16-9"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
+https://github.com/user-attachments/assets/84bc4474-c76f-468b-a86c-2d6f30285b22
 
 For more details, read the full [blog post](https://katson.com/code-interpreter-for-business-central/).
 
