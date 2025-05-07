@@ -1,6 +1,6 @@
-page 50101 "GPT Code Interp Dialog"
+page 50101 "GPT Data Insights Copilot"
 {
-    Caption = 'Ask Code Interpreter';
+    Caption = 'Ask Data Insights Copilot';
     PageType = PromptDialog;
     IsPreview = true;
     Extensible = false;

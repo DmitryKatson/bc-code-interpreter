@@ -4,17 +4,17 @@ pageextension 50100 "GPT Code Interpreter Setup" extends "GPT Code Interpreter S
     {
         addlast(Promoted)
         {
-            actionref(AskCodeInterpreter_Promoted; "GPT AskCodeInterpreter")
+            actionref(AskDataInsightsCopilot_Promoted; "GPT AskDataInsightsCopilot")
             {
             }
         }
         addlast(Prompting)
         {
-            action("GPT AskCodeInterpreter")
+            action("GPT AskDataInsightsCopilot")
             {
-                Caption = 'Ask Code Interpreter';
+                Caption = 'Ask Data Insights Copilot';
                 Image = Sparkle;
-                RunObject = page "GPT Code Interp Dialog";
+                RunObject = page "GPT Data Insights Copilot";
                 ApplicationArea = All;
             }
         }
