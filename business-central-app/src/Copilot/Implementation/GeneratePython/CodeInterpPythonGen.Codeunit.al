@@ -66,7 +66,8 @@ The user will ask a business-related data question.
 Your task is to:
 1. Generate valid Python code to retrieve and analyze Business Central data.
 2. Use the function `get_bc_data(relative_url, environment)` to fetch data.
-   - `relative_url` is the Business Central OData endpoint (e.g., `"v2.0/companies({companyId})/items"`).
+   - `relative_url` is the Business Central OData endpoint (e.g., `"v2.0/companies(companyId)/items"`).
+   - ALWAYS replace {companyId} with the actual GUID value provided by the user
    - `environment` is a string (e.g., `"sandbox"` or `"production"`), always required.
 3. Process the data using available libraries like:
    - `pandas` for dataframes and grouping
@@ -213,6 +214,22 @@ Don''t include ```python at the beginning or end of the code.
 
     local procedure GetUserPrompt(Question: Text): Text
     var
+        UserPrompt: TextBuilder;
+    begin
+        UserPrompt.AppendLine('<system_parameters>');
+        UserPrompt.AppendLine(GetSystemParameters());
+        UserPrompt.AppendLine('</system_parameters>');
+        UserPrompt.AppendLine('<additional_context>');
+        UserPrompt.AppendLine(GetAdditionalContext());
+        UserPrompt.AppendLine('</additional_context>');
+        UserPrompt.AppendLine('<user_question>');
+        UserPrompt.AppendLine(Question);
+        UserPrompt.AppendLine('</user_question>');
+        exit(UserPrompt.ToText());
+    end;
+
+    local procedure GetSystemParameters(): Text
+    var
         EnvironmentInformation: Codeunit "Environment Information";
         JsonObj: JsonObject;
         EnvInfoObj: JsonObject;
@@ -230,9 +247,6 @@ Don''t include ```python at the beginning or end of the code.
 
         // Add current date
         JsonObj.Add('currentDate', Format(Today(), 0, '<Year4>-<Month>-<Day>'));
-
-        // Add user question
-        JsonObj.Add('userQuestion', Question);
 
         // Convert to yaml
         JsonObj.WriteToYaml(YamlText);
@@ -321,5 +335,76 @@ Don''t include ```python at the beginning or end of the code.
     begin
         TableMetadataRec.Get(SourceTableNo);
         exit(TableMetadataRec.Name);
+    end;
+
+    local procedure GetAdditionalContext(): Text
+    var
+        Context: TextBuilder;
+        Handled: Boolean;
+    begin
+        OnBeforeGetAdditionalContext(Context, Handled);
+        if Handled then
+            exit(Context.ToText());
+
+        Context.AppendLine('Here is the additional context to help you generate the Python code:');
+        Context.AppendLine('-----------------------------------------------------');
+        Context.AppendLine(GetAdditionalContextFromKnowledge());
+        Context.AppendLine('-----------------------------------------------------');
+
+        OnAfterGetAdditionalContext(Context);
+
+        exit(Context.ToText());
+    end;
+
+    local procedure GetAdditionalContextFromKnowledge(): Text
+    var
+        InStream: InStream;
+        Knowledge: TextBuilder;
+        Resources: List of [Text];
+        i: Integer;
+        ResourceName: Text;
+        ResourceContent: Text;
+        Handled: Boolean;
+    begin
+        OnBeforeGetAdditionalContextFromKnowledge(Knowledge, Handled);
+        if Handled then
+            exit(Knowledge.ToText());
+
+        Resources := NavApp.ListResources();
+
+        for i := 1 to Resources.Count() do begin
+            ResourceName := Resources.Get(i);
+            ResourceContent := NavApp.GetResourceAsText(ResourceName);
+
+            if ResourceContent <> '' then begin
+                Knowledge.AppendLine('<' + ResourceName + '>');
+                Knowledge.AppendLine(ResourceContent);
+                Knowledge.AppendLine('</' + ResourceName + '>');
+            end;
+        end;
+
+        OnAfterGetAdditionalContextFromKnowledge(Knowledge);
+
+        exit(Knowledge.ToText());
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeGetAdditionalContext(var Context: TextBuilder; var Handled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterGetAdditionalContext(var Context: TextBuilder)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeGetAdditionalContextFromKnowledge(var Knowledge: TextBuilder; var Handled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterGetAdditionalContextFromKnowledge(var Knowledge: TextBuilder)
+    begin
     end;
 }
