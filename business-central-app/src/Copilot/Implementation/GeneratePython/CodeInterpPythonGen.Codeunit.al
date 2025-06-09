@@ -220,7 +220,7 @@ Don''t include ```python at the beginning or end of the code.
         UserPrompt.AppendLine(GetSystemParameters());
         UserPrompt.AppendLine('</system_parameters>');
         UserPrompt.AppendLine('<additional_context>');
-        UserPrompt.AppendLine(GetAdditionalContext());
+        UserPrompt.AppendLine(GetAdditionalContext(Question));
         UserPrompt.AppendLine('</additional_context>');
         UserPrompt.AppendLine('<user_question>');
         UserPrompt.AppendLine(Question);
@@ -337,26 +337,26 @@ Don''t include ```python at the beginning or end of the code.
         exit(TableMetadataRec.Name);
     end;
 
-    local procedure GetAdditionalContext(): Text
+    local procedure GetAdditionalContext(UserQuestion: Text): Text
     var
         Context: TextBuilder;
         Handled: Boolean;
     begin
-        OnBeforeGetAdditionalContext(Context, Handled);
+        OnBeforeGetAdditionalContext(UserQuestion, Context, Handled);
         if Handled then
             exit(Context.ToText());
 
         Context.AppendLine('Here is the additional context to help you generate the Python code:');
         Context.AppendLine('-----------------------------------------------------');
-        Context.AppendLine(GetAdditionalContextFromKnowledge());
+        Context.AppendLine(GetAdditionalContextFromKnowledge(UserQuestion));
         Context.AppendLine('-----------------------------------------------------');
 
-        OnAfterGetAdditionalContext(Context);
+        OnAfterGetAdditionalContext(UserQuestion, Context);
 
         exit(Context.ToText());
     end;
 
-    local procedure GetAdditionalContextFromKnowledge(): Text
+    local procedure GetAdditionalContextFromKnowledge(UserQuestion: Text): Text
     var
         InStream: InStream;
         Knowledge: TextBuilder;
@@ -366,7 +366,7 @@ Don''t include ```python at the beginning or end of the code.
         ResourceContent: Text;
         Handled: Boolean;
     begin
-        OnBeforeGetAdditionalContextFromKnowledge(Knowledge, Handled);
+        OnBeforeGetAdditionalContextFromKnowledge(UserQuestion, Knowledge, Handled);
         if Handled then
             exit(Knowledge.ToText());
 
@@ -377,34 +377,57 @@ Don''t include ```python at the beginning or end of the code.
             ResourceContent := NavApp.GetResourceAsText(ResourceName);
 
             if ResourceContent <> '' then begin
-                Knowledge.AppendLine('<' + ResourceName + '>');
-                Knowledge.AppendLine(ResourceContent);
-                Knowledge.AppendLine('</' + ResourceName + '>');
+                AddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge);
             end;
         end;
 
-        OnAfterGetAdditionalContextFromKnowledge(Knowledge);
+        OnAfterGetAdditionalContextFromKnowledge(UserQuestion, Knowledge);
 
         exit(Knowledge.ToText());
     end;
 
+    local procedure AddResourceToKnowledge(UserQuestion: Text; ResourceName: Text; ResourceContent: Text; var Knowledge: TextBuilder)
+    var
+        Handled: Boolean;
+    begin
+        OnBeforeAddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge, Handled);
+        if Handled then
+            exit;
+
+        Knowledge.AppendLine('<' + ResourceName + '>');
+        Knowledge.AppendLine(ResourceContent);
+        Knowledge.AppendLine('</' + ResourceName + '>');
+
+        OnAfterAddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge);
+    end;
+
     [IntegrationEvent(false, false)]
-    local procedure OnBeforeGetAdditionalContext(var Context: TextBuilder; var Handled: Boolean)
+    local procedure OnBeforeGetAdditionalContext(UserQuestion: Text; var Context: TextBuilder; var Handled: Boolean)
     begin
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnAfterGetAdditionalContext(var Context: TextBuilder)
+    local procedure OnAfterGetAdditionalContext(UserQuestion: Text; var Context: TextBuilder)
     begin
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnBeforeGetAdditionalContextFromKnowledge(var Knowledge: TextBuilder; var Handled: Boolean)
+    local procedure OnBeforeGetAdditionalContextFromKnowledge(UserQuestion: Text; var Knowledge: TextBuilder; var Handled: Boolean)
     begin
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnAfterGetAdditionalContextFromKnowledge(var Knowledge: TextBuilder)
+    local procedure OnAfterGetAdditionalContextFromKnowledge(UserQuestion: Text; var Knowledge: TextBuilder)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeAddResourceToKnowledge(UserQuestion: Text; ResourceName: Text; ResourceContent: Text; var Knowledge: TextBuilder; var Handled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterAddResourceToKnowledge(UserQuestion: Text; ResourceName: Text; ResourceContent: Text; var Knowledge: TextBuilder)
     begin
     end;
 }

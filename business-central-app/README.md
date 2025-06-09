@@ -84,19 +84,34 @@ Subscribe to integration events for dynamic context generation:
 
 ```al
 [EventSubscriber(ObjectType::Codeunit, Codeunit::"GPT Code Interp Python Gen", 'OnAfterGetAdditionalContext', '', false, false)]
-local procedure OnAfterGetAdditionalContext(var Context: TextBuilder)
+local procedure OnAfterGetAdditionalContext(UserQuestion: Text; var Context: TextBuilder)
 begin
     Context.AppendLine('Custom business logic:');
     Context.AppendLine('- Use customer payment terms for analysis');
     Context.AppendLine('- Filter out test customers (code starts with TEST)');
 end;
+
+[EventSubscriber(ObjectType::Codeunit, Codeunit::"GPT Code Interp Python Gen", 'OnBeforeAddResourceToKnowledge', '', false, false)]
+local procedure OnBeforeAddResourceToKnowledge(UserQuestion: Text; ResourceName: Text; ResourceContent: Text; var Knowledge: TextBuilder; var Handled: Boolean)
+begin
+    // Skip certain knowledge files based on the user's question
+    if (StrPos(LowerCase(UserQuestion), 'beer') > 0) and (ResourceName = 'financial-rules.md') then
+        Handled := true; // Skip financial rules for beer-related questions
+end;
 ```
 
 Available events:
-- `OnBeforeGetAdditionalContext` - Replace entire context (with handled pattern)
-- `OnAfterGetAdditionalContext` - Add to existing context
-- `OnBeforeGetAdditionalContextFromKnowledge` - Replace knowledge loading
-- `OnAfterGetAdditionalContextFromKnowledge` - Modify loaded knowledge
+- `OnBeforeGetAdditionalContext(UserQuestion, Context, Handled)` - Replace entire context (with handled pattern)
+- `OnAfterGetAdditionalContext(UserQuestion, Context)` - Add to existing context
+- `OnBeforeGetAdditionalContextFromKnowledge(UserQuestion, Knowledge, Handled)` - Replace knowledge loading
+- `OnAfterGetAdditionalContextFromKnowledge(UserQuestion, Knowledge)` - Modify loaded knowledge
+- `OnBeforeAddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge, Handled)` - Control individual resource inclusion
+- `OnAfterAddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge)` - Modify individual resource content
+
+**Key Features:**
+- **Context-Aware**: All events receive the `UserQuestion` parameter for intelligent filtering
+- **Granular Control**: New resource-level events allow filtering individual knowledge files
+- **Flexible Processing**: Can modify, skip, or enhance content based on the specific question asked
 
 ## Technical Notes
 
