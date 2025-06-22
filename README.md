@@ -61,10 +61,13 @@ sequenceDiagram
 
 - Microsoft Dynamics 365 Business Central (2024 Wave 2/v26.0 or higher)
 - Azure subscription with:
-  - Azure OpenAI service (GPT-4 recommended)
+  - Azure OpenAI service (GPT-4.1 model with 50,000+ token rate limit recommended; see note below)
   - Azure Function App (Python 3.10+ runtime)
 - Business Central environment with API access configured
 - App registration in Azure Active Directory with appropriate permissions
+
+> **Note:**
+> For best results, deploy a GPT-4.1 or GPT 4o model with a high token rate limit (e.g., 50,000 tokens/minute). The model with much lower rate limit (e.g., 8,000 tokens/minute) can cause rate limit errors. If you encounter rate limit issues, consider requesting a quota increase or deploying a GPT-4.1 model. See [Azure OpenAI quota increase](https://aka.ms/oai/quotaincrease) for more information.
 
 ## Getting Started
 
@@ -154,4 +157,4 @@ For support, please contact dmitry@katson.com.
 
 ---
 
-*Empowering Business Central users with AI-driven data analysis* 
+*Empowering Business Central users with AI-driven data analysis*
