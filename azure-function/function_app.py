@@ -46,9 +46,32 @@ def get_bc_data(relative_url, environment):
     }
 
     base_url = f"https://api.businesscentral.dynamics.com/v2.0/{tenant_id}/{environment}/api"
-    response = requests.get(f"{base_url}/{relative_url}", headers=headers)
-    response.raise_for_status()
-    return response.json()
+    full_url = f"{base_url}/{relative_url}"
+    
+    try:
+        response = requests.get(full_url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        # Capture detailed error information
+        error_details = {
+            "error": True,
+            "status_code": response.status_code,
+            "url": full_url,
+            "headers": dict(response.headers),
+            "response_body": response.text,
+            "error_message": str(e)
+        }
+        
+        # Try to parse JSON error response if available
+        try:
+            error_details["error_json"] = response.json()
+        except:
+            pass
+            
+        raise Exception(f"Business Central API Error: {json.dumps(error_details, indent=2)}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Request Error: {str(e)}")
 
 def get_safe_globals():
     import builtins

@@ -5,3 +5,4 @@ numpy
 scikit-learn
 matplotlib
 statsmodels
+python-dotenv
