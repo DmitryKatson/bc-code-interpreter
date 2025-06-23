@@ -51,7 +51,17 @@ def get_bc_data(relative_url, environment):
     try:
         response = requests.get(full_url, headers=headers)
         response.raise_for_status()
-        return response.json()
+        
+        # Check content type to determine response format
+        content_type = response.headers.get('content-type', '').lower()
+        
+        if 'application/json' in content_type:
+            # Return JSON data
+            return response.json()
+        else:
+            # For other content types, return as text
+            return {"text_data": response.text}
+            
     except requests.exceptions.HTTPError as e:
         # Capture detailed error information
         error_details = {
