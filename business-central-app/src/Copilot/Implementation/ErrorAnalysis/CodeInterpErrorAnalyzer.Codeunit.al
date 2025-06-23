@@ -7,12 +7,42 @@ codeunit 50107 "GPT Code Interp Error Analyzer"
         PythonExecutor: Codeunit "GPT Code Interp Execute";
         PythonCode: Text;
         Result: Text;
+        RetryCount: Integer;
+        MaxRetries: Integer;
+        CurrentFailedCode: Text;
+        CurrentErrorMessage: Text;
+        UIHelper: Codeunit "GPT Code Interp UI Helper";
     begin
-        PythonCode := GenerateErrorAnalysisCode(OriginalQuestion, FailedCode, ErrorMessage, AzureOpenAI);
-        if not PythonExecutor.TryExecuteCode(PythonCode, Result) then
-            Error('Failed to execute the error analysis code. Error: ' + GetLastErrorText());
+        MaxRetries := 3;
+        RetryCount := 0;
+        CurrentFailedCode := FailedCode;
+        CurrentErrorMessage := ErrorMessage;
 
-        PythonGenerator.AddErrorAnalysis(PythonCode, Result);
+        repeat
+            RetryCount += 1;
+
+            PythonCode := GenerateErrorAnalysisCode(OriginalQuestion, CurrentFailedCode, CurrentErrorMessage, AzureOpenAI);
+
+            if PythonExecutor.TryExecuteCode(PythonCode, Result) then begin
+                PythonGenerator.AddErrorAnalysis(PythonCode, Result);
+                exit;
+            end else begin
+                // Add error to history
+                PythonGenerator.AddErrorText(RetryCount, GetLastErrorText());
+
+                if RetryCount < MaxRetries then begin
+                    UIHelper.ShowStatus('Error analysis failed. Retrying with improved approach... (Attempt ' + Format(RetryCount) + '/' + Format(MaxRetries) + ')');
+
+                    // Update for next iteration - use the failed analysis code as the new failed code
+                    CurrentFailedCode := PythonCode;
+                    CurrentErrorMessage := GetLastErrorText();
+                end else begin
+                    // Final failure after all retries
+                    UIHelper.ShowStatus('Error analysis failed after ' + Format(MaxRetries) + ' attempts. Proceeding with available information.');
+                    PythonGenerator.AddErrorAnalysis(PythonCode, 'Error analysis failed: ' + GetLastErrorText());
+                end;
+            end;
+        until RetryCount >= MaxRetries;
     end;
 
     procedure GenerateErrorAnalysisCode(OriginalQuestion: Text; FailedCode: Text; ErrorMessage: Text; var AzureOpenAI: Codeunit "Azure OpenAi") Result: Text
@@ -73,6 +103,28 @@ Instead:
      - Add `?$top=1` to the URL to get just one record
      - Inspect the structure by examining keys and first record only
      - Example: `data = get_bc_data("v2.0/companies({companyId})/salesOrders?$top=1", "sandbox")`
+
+  C) For child endpoints that require parent document IDs (like salesInvoiceLines, salesOrderLines, etc.):
+     - First, get a valid parent document ID by querying the parent endpoint with $top=1
+     - Then use that ID to explore the child endpoint structure
+     - Example approach:
+       ```python
+       # Step 1: Get a valid sales invoice ID
+       invoices = get_bc_data("v2.0/companies({companyId})/salesInvoices?$top=1", "sandbox")
+       if invoices and len(invoices) > 0:
+           invoice_id = invoices[0].get(''id'')
+           # Step 2: Explore the lines structure using the valid ID
+           lines = get_bc_data(f"v2.0/companies({{companyId}})/salesInvoices({invoice_id})/salesInvoiceLines?$top=1", "sandbox")
+       ```
+     - Alternative: Use the parent endpoint to understand the relationship structure
+     - For endpoints like "salesInvoiceLines", you need a valid "salesInvoices" ID first
+
+  D) ⚠️ LAST RESORT: Use $metadata for detailed entity and field information ⚠️
+     - Use `get_bc_data("v2.0/$metadata", environment)` to get XML metadata about all entities and fields
+     - This returns comprehensive information but is very large - use ONLY when other approaches fail
+     - Parse the XML response to find specific entity definitions, field names, and data types
+     - Example: `data = get_bc_data("v2.0/$metadata", "sandbox")`
+     - Use this sparingly as it returns extensive metadata for the entire API
 
 - Your goal is to explore the API structure — not the full dataset.
 - Minimize data transfer by only requesting exactly what you need to diagnose the issue.

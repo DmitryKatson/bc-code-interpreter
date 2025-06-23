@@ -80,7 +80,7 @@ codeunit 50102 "GPT Code Interp Impl"
                 UIHelper.ShowStatus('Oops! I made a mistake. Let me find a better solution... (Attempt ' + Format(RetryCount) + '/' + Format(MaxRetries) + ')');
                 // Analyze error and find a way to fix it
                 PythonGenerator.AddErrorText(RetryCount, GetLastErrorText());
-                PythonErrorAnalyzer.AnalyzeError(InputText, PythonCode, GetLastErrorText(), PythonGenerator, AzureOpenAI);
+                PythonErrorAnalyzer.AnalyzeError(PythonGenerator.GetUserPrompt(InputText), PythonCode, GetLastErrorText(), PythonGenerator, AzureOpenAI);
             end else
                 exit(ExecutionResult);
 

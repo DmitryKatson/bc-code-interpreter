@@ -51,31 +51,31 @@ Add your custom instructions as text or markdown files in the `knowledge` folder
 2. Include business rules, custom API definitions, or specific instructions
 3. The AI will automatically include this context when generating code
 
-Example knowledge file (`knowledge/custom-apis.md`):
+Example knowledge file (`knowledge/demo-api-guide.md`):
 ```markdown
-# Custom APIs
+# Demo API Guide for Code Interpreter
 
-## Brewery Management APIs
+## Custom APIs
 
-### Beer Production API
-- Endpoint: `contoso/brewery/v1.0/companies({companyId})/beerProduction`
-- Returns: Production batches with fermentation data
-- Key fields: batchNumber, beerType, productionDate, fermentationDays, alcoholContent
+### Manufacturing Production API
+- **Endpoint**: `contoso/manufacturing/v1.0/companies({companyId})/productionOrders`
+- **Returns**: Production orders with detailed manufacturing data
+- **Key fields**: orderNumber, itemNumber, plannedQuantity, actualQuantity, startDate, endDate, status
 
-### Quality Control API  
-- Endpoint: `contoso/brewery/v1.0/companies({companyId})/qualityTests`
-- Returns: Quality test results for beer batches
-- Key fields: batchNumber, testDate, testType, result, passedQuality
+### Quality Assurance API
+- **Endpoint**: `contoso/quality/v1.0/companies({companyId})/qualityInspections`
+- **Returns**: Quality inspection results for manufactured items
+- **Key fields**: inspectionId, orderNumber, itemNumber, inspectionDate, inspectorId, result, defectsFound
 
-### Inventory Tracking API
-- Endpoint: `contoso/brewery/v1.0/companies({companyId})/rawMaterials`
-- Returns: Raw material inventory (hops, malt, yeast)
-- Key fields: materialType, quantity, expirationDate, supplier
+## Example Queries
 
-## Usage Instructions
-- Always filter production data by date ranges for performance
-- Use batchNumber to link production, quality, and inventory data
-- Standard Business Central APIs handle sales and financial data
+### Production Performance Analysis
+**User Question**: "Show me production efficiency for finished orders this year"
+**Endpoint**: `contoso/manufacturing/v1.0/companies({companyId})/productionOrders?$filter=status eq 'Finished' and endDate ge 2024-01-01&$select=orderNumber,itemNumber,plannedQuantity,actualQuantity,startDate,endDate`
+
+### Quality Inspection Summary
+**User Question**: "What's our quality inspection pass rate for this quarter?"
+**Endpoint**: `contoso/quality/v1.0/companies({companyId})/qualityInspections?$filter=inspectionDate ge 2024-01-01&$select=inspectionId,orderNumber,itemNumber,result,defectsFound`
 ```
 
 ### Method 2: Event Subscription (Advanced)
@@ -98,6 +98,18 @@ begin
     if (StrPos(LowerCase(UserQuestion), 'beer') > 0) and (ResourceName = 'financial-rules.md') then
         Handled := true; // Skip financial rules for beer-related questions
 end;
+
+[EventSubscriber(ObjectType::Codeunit, Codeunit::"GPT Code Interp Python Gen", 'OnAfterGetParentEntitySetName', '', false, false)]
+local procedure OnAfterGetParentEntitySetName(PageMetadataRec: Record "Page Metadata"; var ParentEntitySetName: Text)
+begin
+    // Add custom parent-child entity relationships
+    case LowerCase(PageMetadataRec.EntitySetName) of
+        'customOrderLines':
+            ParentEntitySetName := 'customOrders';
+        'projectTaskLines':
+            ParentEntitySetName := 'projectTasks';
+    end;
+end;
 ```
 
 Available events:
@@ -107,17 +119,39 @@ Available events:
 - `OnAfterGetAdditionalContextFromKnowledge(UserQuestion, Knowledge)` - Modify loaded knowledge
 - `OnBeforeAddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge, Handled)` - Control individual resource inclusion
 - `OnAfterAddResourceToKnowledge(UserQuestion, ResourceName, ResourceContent, Knowledge)` - Modify individual resource content
+- `OnAfterGetParentEntitySetName(PageMetadataRec, ParentEntitySetName)` - **NEW**: Customize parent-child entity relationships
 
 **Key Features:**
 - **Context-Aware**: All events receive the `UserQuestion` parameter for intelligent filtering
-- **Granular Control**: New resource-level events allow filtering individual knowledge files
+- **Granular Control**: Resource-level events allow filtering individual knowledge files
 - **Flexible Processing**: Can modify, skip, or enhance content based on the specific question asked
+- **Parent-Child Relationships**: **NEW**: Customize API entity parent-child mappings for custom APIs
+
+## Version 1.0.1.1 Changes
+
+### Enhanced Error Analysis
+- **Retry Mechanism**: Error analysis now includes up to 3 retry attempts with progressive learning
+- **Child Entity Support**: Improved handling of child endpoints that require parent document IDs
+- **Metadata Fallback**: Added `$metadata` endpoint as last resort for comprehensive API exploration
+- **Better Error Messages**: More informative status updates during error analysis
+
+### API Entity Improvements
+- **Parent Entity Mapping**: Added `parentEntitySetName` property to identify child entities
+- **Enhanced API Documentation**: Generated API list now includes parent-child relationship information
+- **Custom Entity Support**: New event for extending parent-child mappings for custom APIs
+
+### Code Generation Enhancements
+- **Parent-Child Awareness**: AI now understands when entities require parent IDs
+- **Better URI Generation**: Improved guidance for handling child entities in API calls
+- **Performance Optimization**: Enhanced prompts for efficient data retrieval
 
 ## Technical Notes
 
 - Secure execution: All code runs in your Azure subscription
 - Data privacy: No business data sent to external services
 - Output format: Text answers with optional visualizations
+- **NEW**: Intelligent retry mechanism for error analysis
+- **NEW**: Parent-child entity relationship support
 
 ## Troubleshooting
 

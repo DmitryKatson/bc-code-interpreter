@@ -116,7 +116,18 @@ When generating the `relative_url` used in the `get_bc_data()` function, follow 
    - Example: `contoso/marketing/v1.0/companies({companyId})/campaigns`
    - Use the properties from the appropriate custom API object in the availableEntities array
 
-3. **Query options** can be added to both standard and custom API paths:
+3. **⚠️ IMPORTANT: Child Entities with Parent Requirements** ⚠️
+   - If an entity has a `parentEntitySetName` defined, it CANNOT be called directly
+   - You MUST always reference it through the parent entity using the format: `/{parentEntitySetName}({id})/{entitySetName}`
+   - Examples:
+     - ❌ WRONG: `v2.0/companies({companyId})/salesInvoiceLines` (will fail)
+     - ✅ CORRECT: `v2.0/companies({companyId})/salesInvoices({invoiceId})/salesInvoiceLines`
+     - ❌ WRONG: `v2.0/companies({companyId})/purchaseOrderLines` (will fail)
+     - ✅ CORRECT: `v2.0/companies({companyId})/purchaseOrders({orderId})/purchaseOrderLines`
+   - To access child entities, you must first get a valid parent entity ID, then use that ID in the child entity path
+   - Common child entities include: salesInvoiceLines, salesOrderLines, purchaseInvoiceLines, purchaseOrderLines, etc.
+
+4. **Query options** can be added to both standard and custom API paths:
    - Use the `$filter` option when date ranges or conditions are mentioned:
      - Example: `?$filter=postingDate ge 2024-01-01 and postingDate le 2024-03-31`
      - Supported operators: `eq`, `ne`, `gt`, `lt`, `ge`, `le`, `and`, `or`
@@ -126,7 +137,7 @@ When generating the `relative_url` used in the `get_bc_data()` function, follow 
      - `$top=N` for limiting results (e.g., top 5 items)
      - `$count=true` to get the total count of records
 
-4. **Extra guidelines:**
+5. **Extra guidelines:**
    - Ensure that string values in filters are enclosed in single quotes:
      - Example: `?$filter=customerId eq ''C10000''`
    - When multiple query options are used, separate them with `&`:
@@ -212,7 +223,7 @@ Don''t include ```python at the beginning or end of the code.
 ');
     end;
 
-    local procedure GetUserPrompt(Question: Text): Text
+    internal procedure GetUserPrompt(Question: Text): Text
     var
         UserPrompt: TextBuilder;
     begin
@@ -289,7 +300,37 @@ Don''t include ```python at the beginning or end of the code.
         ApiObj.Add('entitySetName', PageMetadataRec.EntitySetName);
         ApiObj.Add('isStandardAPI', true);
         ApiObj.Add('sourceTableName', GetSourceTableName(PageMetadataRec.SourceTable));
+        ApiObj.Add('parentEntitySetName', GetParentEntitySetName(PageMetadataRec));
         ApiArray.Add(ApiObj);
+    end;
+
+    local procedure GetParentEntitySetName(PageMetadataRec: Record "Page Metadata"): Text
+    var
+        ParentEntitySetName: Text;
+    begin
+        // Map child entities to their parent entity sets
+        case LowerCase(PageMetadataRec.EntitySetName) of
+            'purchaseInvoiceLines':
+                exit('purchaseInvoices');
+            'purchaseOrderLines':
+                exit('purchaseOrders');
+            'purchaseCreditMemoLines':
+                exit('purchaseCreditMemos');
+            'salesCreditMemoLines':
+                exit('salesCreditMemos');
+            'salesInvoiceLines':
+                exit('salesInvoices');
+            'salesOrderLines':
+                exit('salesOrders');
+            'salesQuoteLines':
+                exit('salesQuotes');
+        end;
+
+        OnAfterGetParentEntitySetName(PageMetadataRec, ParentEntitySetName);
+        if ParentEntitySetName <> '' then
+            exit(ParentEntitySetName);
+
+        exit('');
     end;
 
     local procedure AddCustomAPIEntityToJson(var ApiArray: JsonArray; PageMetadataRec: Record "Page Metadata")
@@ -308,6 +349,7 @@ Don''t include ```python at the beginning or end of the code.
         ApiObj.Add('entitySetName', PageMetadataRec.EntitySetName);
         ApiObj.Add('isCustomAPI', true);
         ApiObj.Add('sourceTableName', GetSourceTableName(PageMetadataRec.SourceTable));
+        ApiObj.Add('parentEntitySetName', GetParentEntitySetName(PageMetadataRec));
         ApiArray.Add(ApiObj);
     end;
 
@@ -428,6 +470,11 @@ Don''t include ```python at the beginning or end of the code.
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterAddResourceToKnowledge(UserQuestion: Text; ResourceName: Text; ResourceContent: Text; var Knowledge: TextBuilder)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterGetParentEntitySetName(PageMetadataRec: Record "Page Metadata"; var ParentEntitySetName: Text)
     begin
     end;
 }
